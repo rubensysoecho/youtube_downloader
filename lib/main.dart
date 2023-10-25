@@ -2,8 +2,6 @@
 
 import 'package:flutter/material.dart';
 import 'package:youtube_downloader/pages/first_page.dart';
-import 'package:youtube_downloader/pages/home_page.dart';
-import 'package:youtube_downloader/pages/settings_page.dart';
 
 void main() {
   runApp(const MyApp());
@@ -23,8 +21,6 @@ class MyApp extends StatelessWidget {
       home: FirstPage(),
       routes: {
         '/firstpage' :(context) => FirstPage(),
-        '/homepage' :(context) => HomePage(),
-        '/settingspage' :(context) => SettingsPage(),
       },
     );
   }
