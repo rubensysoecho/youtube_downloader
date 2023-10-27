@@ -1,4 +1,4 @@
-// ignore_for_file: prefer_const_constructors, prefer_const_literals_to_create_immutables, prefer_interpolation_to_compose_strings
+// ignore_for_file: prefer_const_constructors, prefer_const_literals_to_create_immutables, prefer_interpolation_to_compose_strings, avoid_print
 
 import 'dart:io';
 
@@ -7,6 +7,7 @@ import 'package:youtube_explode_dart/youtube_explode_dart.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:file_picker/file_picker.dart';
 import '../services/functions/video_functions.dart';
+import '../widgets/DownloadsDrawer.dart';
 
 class FirstPage extends StatefulWidget {
   const FirstPage({super.key});
@@ -19,9 +20,11 @@ class _FirstPageState extends State<FirstPage> {
   final myController = TextEditingController();
 
   List listaVideos = [];
-  List listaVideosDescargando = [];
+  List<Video> listaVideosEnDescarga = [];
+  bool btnVisible = false;
 
   Future<List> buscarVideos(url) async {
+    btnVisible = btnVisible;
     showDialog(
       context: context,
       builder: (context) {
@@ -40,6 +43,7 @@ class _FirstPageState extends State<FirstPage> {
     if (listaVideos.isNotEmpty) {
       setState(() {
         listaVideos = listaVideos;
+        btnVisible = true;
       });
       print('Nombres de videos añadidos a lista✅');
     } else {
@@ -101,6 +105,52 @@ class _FirstPageState extends State<FirstPage> {
       var fileStream = file.openWrite();
 
       try {
+        listaVideosEnDescarga.add(v);
+        print('${v.title} descargandose...');
+        setState(() {
+          listaVideosEnDescarga = listaVideosEnDescarga;
+        });
+
+        await stream.pipe(fileStream);
+        await fileStream.flush();
+        await fileStream.close();
+
+        //listaVideosEnDescarga.remove(v);
+        print('${v.title} terminó de descargarse✅');
+
+        /*setState(() {
+          listaVideosEnDescarga = listaVideosEnDescarga;
+        });*/
+      } catch (e) {
+        print('Error 😒: ' + e.toString());
+      }
+    }
+
+    print('Video MP3 descargado correctamente ✅');
+    yt.close();
+  }
+
+  Future<void> descargarVideoMP4(index) async {
+    Video v = listaVideos[index];
+    final yt = YoutubeExplode();
+    final streamInfo = await yt.videos.streamsClient.getManifest(v.id);
+    final tempDir = await getTemporaryDirectory();
+
+    File file;
+    String title = v.title;
+    if (Platform.isWindows) {
+      file = File(tempDir.path + '/' + title + '.mp4');
+    } else {
+      String? downloadsDir = await getDownloadPath();
+      file = File(downloadsDir! + '/' + title + '.mp4');
+    }
+
+    if (streamInfo != null) {
+      var info = streamInfo.video.withHighestBitrate();
+      var stream = yt.videos.streamsClient.get(info);
+      var fileStream = file.openWrite();
+
+      try {
         await stream.pipe(fileStream);
         await fileStream.flush();
         await fileStream.close();
@@ -109,7 +159,7 @@ class _FirstPageState extends State<FirstPage> {
       }
     }
 
-    print('Video MP3 descargado correctamente ✅');
+    print('Video MP4 descargado correctamente ✅');
     yt.close();
   }
 
@@ -119,14 +169,6 @@ class _FirstPageState extends State<FirstPage> {
       print(i);
       descargarVideoMP3(i);
     }
-    showDialog(
-      context: context,
-      builder: (context) {
-        return Center(
-            child:
-                Text('Se han descargado los $numVideos videos de la playlist'));
-      },
-    );
   }
 
   void _mostrarDialogo() {
@@ -164,6 +206,9 @@ class _FirstPageState extends State<FirstPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: Text('Youtube Downloader')),
+      drawer: DownloadsDrawer(
+        listaVideosEnDescarga: listaVideosEnDescarga,
+      ),
       body: Padding(
         padding: const EdgeInsets.all(24),
         child: Column(
@@ -188,16 +233,28 @@ class _FirstPageState extends State<FirstPage> {
               padding: const EdgeInsets.all(12),
               child: Container(
                 height: 100,
-                width: 200,
-                child: ElevatedButton(
-                  onPressed: () {
-                    _mostrarDialogo();
-                  },
-                  child: Text(
-                    'Download All',
-                    style: TextStyle(fontSize: 20),
+                width: 300,
+                child: Visibility(
+                  visible: btnVisible,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      _mostrarDialogo();
+                    },
+                    child: Text(
+                      'Download All (${listaVideos.length} videos)',
+                      style: TextStyle(fontSize: 20),
+                    ),
                   ),
                 ),
+              ),
+            ),
+            Visibility(
+              visible: btnVisible,
+              child: Divider(
+                indent: 100,
+                endIndent: 100,
+                height: 30,
+                color: Colors.red,
               ),
             ),
             Expanded(
@@ -205,58 +262,83 @@ class _FirstPageState extends State<FirstPage> {
                 itemCount: listaVideos.length,
                 itemBuilder: (context, index) {
                   Video v = listaVideos[index];
+
+                  //Duration duration = Duration(minutes: v.duration.inMinutes, seconds: v.duration.inSeconds);
+                  //print(duration);
                   return Card(
-                      shape: RoundedRectangleBorder(
-                          side: BorderSide(color: Colors.grey, width: 0.5),
-                          borderRadius: BorderRadius.circular(5)),
-                      elevation: 2,
-                      child: Row(
-                        children: [
-                          Image(
-                            height: 150,
-                            width: 400,
-                            fit: BoxFit.cover,
-                            image: NetworkImage(v.thumbnails.highResUrl),
-                          ),
-
-                          Flexible(
-                            child: Padding(
-                              padding: const EdgeInsets.all(10),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    v.title,
-                                    maxLines: 2,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: TextStyle(fontSize: 28),
-                                  ),
-                                  Text(
-                                    v.author,
-                                    style: TextStyle(
-                                        fontSize: 18, color: Colors.black54),
-                                  ),
-                                ],
-                              ),
+                    shape: RoundedRectangleBorder(
+                        side: BorderSide(color: Colors.grey, width: 0.5),
+                        borderRadius: BorderRadius.circular(5)),
+                    elevation: 2,
+                    child: Row(
+                      children: [
+                        Image(
+                          height: 150,
+                          width: 400,
+                          fit: BoxFit.cover,
+                          image: NetworkImage(v.thumbnails.highResUrl),
+                        ),
+                        Flexible(
+                          child: Padding(
+                            padding: const EdgeInsets.all(10),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  v.title,
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(fontSize: 28),
+                                ),
+                                Text(
+                                  v.author,
+                                  style: TextStyle(
+                                      fontSize: 18, color: Colors.black54),
+                                ),
+                              ],
                             ),
                           ),
-
-                          Expanded(child: SizedBox()),
-                          
-                          Padding(
-                            padding: const EdgeInsets.all(30),
-                            child: ElevatedButton(
-                              onPressed: () {
-                                descargarVideoMP3(index);
-                              },
-                              child: Padding(
-                                padding: const EdgeInsets.all(15),
-                                child: Text('MP3'),
-                              ),
+                        ),
+                        Column(
+                          children: [
+                            Text('Duration:  min'),
+                          ],
+                        ),
+                        Spacer(),
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: Padding(
+                            padding: const EdgeInsets.all(20),
+                            child: Row(
+                              children: [
+                                ElevatedButton(
+                                  onPressed: () {
+                                    descargarVideoMP3(index);
+                                  },
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(15),
+                                    child: Text('MP3'),
+                                  ),
+                                ),
+                                SizedBox(
+                                  width: 10,
+                                ),
+                                ElevatedButton(
+                                  onPressed: () {
+                                    descargarVideoMP4(index);
+                                  },
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(15),
+                                    child: Text('MP4'),
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
-                        ],
-                      ));
+                        ),
+                      ],
+                    ),
+                  );
                 },
               ),
             ),
