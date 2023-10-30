@@ -43,6 +43,7 @@ dependencies:
   ffmpeg_kit_flutter: ^6.0.3
   path_provider: ^2.1.1
   file_picker: ^6.0.0
+  open_file: ^3.3.2
 
 dev_dependencies:
   flutter_test:

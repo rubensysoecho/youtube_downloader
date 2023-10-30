@@ -21,6 +21,7 @@ class _FirstPageState extends State<FirstPage> {
 
   List listaVideos = [];
   List<Video> listaVideosEnDescarga = [];
+  List<Video> listaDescargados = [];
   bool btnVisible = false;
 
   Future<List> buscarVideos(url) async {
@@ -58,7 +59,6 @@ class _FirstPageState extends State<FirstPage> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    print('cambiaron coza');
   }
 
   void ejecutarBuscarVideos(url) async {
@@ -107,6 +107,7 @@ class _FirstPageState extends State<FirstPage> {
       try {
         listaVideosEnDescarga.add(v);
         print('${v.title} descargandose...');
+
         setState(() {
           listaVideosEnDescarga = listaVideosEnDescarga;
         });
@@ -115,6 +116,12 @@ class _FirstPageState extends State<FirstPage> {
         await fileStream.flush();
         await fileStream.close();
 
+        listaVideosEnDescarga.remove(v);
+        listaDescargados.add(v);
+
+        setState(() {
+          listaDescargados = listaDescargados;
+        });
         //listaVideosEnDescarga.remove(v);
         print('${v.title} terminó de descargarse✅');
 
@@ -126,7 +133,6 @@ class _FirstPageState extends State<FirstPage> {
       }
     }
 
-    print('Video MP3 descargado correctamente ✅');
     yt.close();
   }
 
@@ -171,6 +177,10 @@ class _FirstPageState extends State<FirstPage> {
     }
   }
 
+  void abrirDrawer(BuildContext context) {
+    Scaffold.of(context).openDrawer();
+  }
+
   void _mostrarDialogo() {
     showDialog(
       context: context,
@@ -208,6 +218,7 @@ class _FirstPageState extends State<FirstPage> {
       appBar: AppBar(title: Text('Youtube Downloader')),
       drawer: DownloadsDrawer(
         listaVideosEnDescarga: listaVideosEnDescarga,
+        listaDescargados: listaDescargados,
       ),
       body: Padding(
         padding: const EdgeInsets.all(24),
@@ -314,6 +325,7 @@ class _FirstPageState extends State<FirstPage> {
                                 ElevatedButton(
                                   onPressed: () {
                                     descargarVideoMP3(index);
+                                    abrirDrawer(context);
                                   },
                                   child: Padding(
                                     padding: const EdgeInsets.all(15),
@@ -326,6 +338,7 @@ class _FirstPageState extends State<FirstPage> {
                                 ElevatedButton(
                                   onPressed: () {
                                     descargarVideoMP4(index);
+                                    abrirDrawer(context);
                                   },
                                   child: Padding(
                                     padding: const EdgeInsets.all(15),
