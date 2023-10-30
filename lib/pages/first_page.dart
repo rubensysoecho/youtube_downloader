@@ -274,8 +274,6 @@ class _FirstPageState extends State<FirstPage> {
                 itemBuilder: (context, index) {
                   Video v = listaVideos[index];
 
-                  //Duration duration = Duration(minutes: v.duration.inMinutes, seconds: v.duration.inSeconds);
-                  //print(duration);
                   return Card(
                     shape: RoundedRectangleBorder(
                         side: BorderSide(color: Colors.grey, width: 0.5),
@@ -306,16 +304,14 @@ class _FirstPageState extends State<FirstPage> {
                                   style: TextStyle(
                                       fontSize: 18, color: Colors.black54),
                                 ),
+                                Text('Duration: ${v.duration.toString()}  min'),
                               ],
                             ),
                           ),
                         ),
-                        Column(
-                          children: [
-                            Text('Duration:  min'),
-                          ],
-                        ),
+
                         Spacer(),
+                        
                         Align(
                           alignment: Alignment.centerRight,
                           child: Padding(

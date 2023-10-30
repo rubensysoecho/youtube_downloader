@@ -50,49 +50,25 @@ class _DownloadsDrawerState extends State<DownloadsDrawer> {
               itemCount: widget.listaVideosEnDescarga.length,
               itemBuilder: (context, index) {
                 Video v = widget.listaVideosEnDescarga[index];
-
-                if (widget.listaVideosEnDescarga.contains(v)) {
-                  return ListTile(
-                      //leading: Image(
-                      //  image: NetworkImage(v.thumbnails.highResUrl),
-                      //),
-                      tileColor: Colors.red[200],
-                      title: Text(v.title),
-                      subtitle: Text(v.author),
-                      trailing: ElevatedButton(
-                        onPressed: () {
-                          abrirDireccion();
-                        },
-                        child: Icon(
-                          Icons.folder,
-                        ),
-                      ));
-                } else {
-                  return ListTile(
-                      //leading: Image(
-                      //  image: NetworkImage(v.thumbnails.highResUrl),
-                      //),
-                      tileColor: Colors.green,
-                      title: Text(v.title),
-                      subtitle: Text(v.author),
-                      trailing: ElevatedButton(
-                        onPressed: () {
-                          abrirDireccion();
-                        },
-                        child: Icon(
-                          Icons.folder,
-                        ),
-                      ));
-                }
+                return Padding(
+                    padding: const EdgeInsets.only(top: 5, bottom: 5),
+                    child: ListTile(
+                        //leading: Image(
+                        //  image: NetworkImage(v.thumbnails.highResUrl),
+                        //),
+                        tileColor: Colors.red[200],
+                        title: Text(v.title),
+                        subtitle: Text(v.author),
+                        trailing: ElevatedButton(
+                          onPressed: () {
+                            abrirDireccion();
+                          },
+                          child: Icon(
+                            Icons.folder,
+                          ),
+                        )),
+                  );
               },
-            ),
-            DrawerHeader(
-              child: Center(
-                child: Text(
-                  'Downloaded',
-                  style: TextStyle(fontSize: 28),
-                ),
-              ),
             ),
             ListView.builder(
               shrinkWrap: true,
@@ -100,24 +76,28 @@ class _DownloadsDrawerState extends State<DownloadsDrawer> {
               itemBuilder: (context, index) {
                 Video v = widget.listaDescargados[index];
 
-                return ListTile(
-                    tileColor: Colors.green,
-                    leading: ElevatedButton(
-                      onPressed: () {
-                        borrarDescargado(index);
-                      },
-                      child: Icon(Icons.close),
-                    ),
-                    title: Text(v.title),
-                    subtitle: Text(v.author),
-                    trailing: ElevatedButton(
-                      onPressed: () {
-                        abrirDireccion();
-                      },
-                      child: Icon(
-                        Icons.folder,
+                return Padding(
+                  padding: const EdgeInsets.only(top: 5, bottom: 5),
+                  child: ListTile(
+                      tileColor: Colors.green,
+                      leading: ElevatedButton(
+                        onPressed: () {
+                          borrarDescargado(index);
+                        },
+                        child: Icon(Icons.close),
                       ),
-                    ));
+                      title: Text(v.title),
+                      subtitle: Text(v.author),
+                      trailing: ElevatedButton(
+                        onPressed: () {
+                          abrirDireccion();
+                        },
+                        child: Icon(
+                          Icons.folder,
+                        ),
+                      )
+                  ),
+                );
               },
             ),
           ],
