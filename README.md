@@ -1,6 +1,7 @@
 # Youtube Downloader
 
 A new Flutter project that allows you to download single videos inside a playlist or a whole playlist on .mp3 and .mp4 format.
+
 ATTENTION⚠️: DOWNLOADED VIDEOS ARE LOCATED ON THE TEMP FOLDER.
 
 ## Getting Started
