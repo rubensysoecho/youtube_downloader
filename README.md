@@ -12,5 +12,5 @@ flutter build windows
 ```
 After the process is completed go to this path and you will find the .exe of the application -> build\windows\runner\Release
 
-THANKS FOR DOWNLOADING AND SEND YOUR FEEDBACK 🩷
+THANKS FOR DOWNLOADING AND SEND YOUR FEEDBACK!!
 
