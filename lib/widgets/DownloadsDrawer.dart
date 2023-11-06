@@ -53,9 +53,6 @@ class _DownloadsDrawerState extends State<DownloadsDrawer> {
                 return Padding(
                     padding: const EdgeInsets.only(top: 5, bottom: 5),
                     child: ListTile(
-                        //leading: Image(
-                        //  image: NetworkImage(v.thumbnails.highResUrl),
-                        //),
                         tileColor: Colors.red[200],
                         title: Text(v.title),
                         subtitle: Text(v.author),
