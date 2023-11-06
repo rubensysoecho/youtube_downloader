@@ -15,9 +15,9 @@ ATTENTION⚠️: DOWNLOADED VIDEOS ARE LOCATED ON THE TEMP FOLDER.
 
 ## Getting Started
 
-To download this app you need to clone this repository and write this code on the terminal:
+To download this app you need to clone this repository go to this path and open 'yt_downloader.exe' to start the instalation process:
 ```sh
-flutter build windows
+youtube_downloader/installer
 ```
 After the process is completed go to this path and you will find the .exe of the application -> build\windows\runner\Release
 
