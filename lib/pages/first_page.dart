@@ -1,5 +1,6 @@
 // ignore_for_file: prefer_const_constructors, prefer_const_literals_to_create_immutables, prefer_interpolation_to_compose_strings, avoid_print
 
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -130,6 +131,7 @@ class _FirstPageState extends State<FirstPage> {
           listaVideosEnDescarga = listaVideosEnDescarga;
         });
 
+        final countController = StreamController<int>();
         final len = audio.size.totalBytes;
         var count = 0;
         await for (final data in audioStream) {
@@ -151,6 +153,7 @@ class _FirstPageState extends State<FirstPage> {
           listaDescargados = listaDescargados;
         });
 
+        countController.close();
         print('${v.title} terminó de descargarse✅');
       } catch (e) {
         print('Error 😒: ' + e.toString());
@@ -164,32 +167,77 @@ class _FirstPageState extends State<FirstPage> {
     Video v = listaVideos[index];
     final yt = YoutubeExplode();
     final streamInfo = await yt.videos.streamsClient.getManifest(v.id);
+    final videoInfo = streamInfo.video;
+    final video = videoInfo.first;
+    final videoStream = yt.videos.streamsClient.get(video);
     final tempDir = await getTemporaryDirectory();
 
     File file;
-    String title = v.title;
+    String fileName = '${v.title}.'
+        .replaceAll(r'\', '')
+        .replaceAll('/', '')
+        .replaceAll('*', '')
+        .replaceAll('?', '')
+        .replaceAll('"', '')
+        .replaceAll('<', '')
+        .replaceAll('>', '')
+        .replaceAll('|', '');
     if (Platform.isWindows) {
-      file = File(tempDir.path + '/' + title + '.mp4');
-    } else {
+      file = File('$tempDir/$fileName.mp4');
+    } else if (Platform.isMacOS) {
       String? downloadsDir = await getDownloadPath();
-      file = File(downloadsDir! + '/' + title + '.mp4');
+      file = File('$downloadsDir/$fileName.mp4');
+    } else  {
+      String? downloadsDir = await getDownloadPath();
+      file = File('$downloadsDir/$fileName.mp4');
+    }
+
+    if (file.existsSync()) {
+      file.deleteSync();
     }
 
     if (streamInfo != null) {
-      var info = streamInfo.video.withHighestBitrate();
+      var info = streamInfo.audioOnly.withHighestBitrate();
       var stream = yt.videos.streamsClient.get(info);
-      var fileStream = file.openWrite();
+      var fileStream = file.openWrite(mode: FileMode.writeOnlyAppend);
 
       try {
+        listaVideosEnDescarga.add(v);
+        print('${v.title} descargandose...');
+
+        setState(() {
+          listaVideosEnDescarga = listaVideosEnDescarga;
+        });
+
+        final countController = StreamController<int>();
+        final len = video.size.totalBytes;
+        var count = 0;
+        await for (final data in videoStream) {
+          //Calcular Progreso - Mirar en GitHub
+          count += data.length;
+          final progress = ((count / len) * 100).ceil();
+          print(progress.toStringAsFixed(2));
+          fileStream.add(data);
+        }
+        
         await stream.pipe(fileStream);
         await fileStream.flush();
         await fileStream.close();
-      } catch (e, stack) {
+
+        listaVideosEnDescarga.remove(v);
+        listaDescargados.add(v);
+
+        setState(() {
+          listaDescargados = listaDescargados;
+        });
+
+        countController.close();
+        print('${v.title} terminó de descargarse✅');
+      } catch (e) {
         print('Error 😒: ' + e.toString());
       }
     }
 
-    print('Video MP4 descargado correctamente ✅');
     yt.close();
   }
 
