@@ -5,8 +5,6 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:youtube_explode_dart/youtube_explode_dart.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:file_picker/file_picker.dart';
-import '../services/functions/video_functions.dart';
 import '../widgets/DownloadsDrawer.dart';
 
 class FirstPage extends StatefulWidget {
@@ -69,7 +67,9 @@ class _FirstPageState extends State<FirstPage> {
     Directory? directory;
     try {
       if (Platform.isIOS) {
-        directory = await getApplicationDocumentsDirectory();
+        directory = await getDownloadsDirectory();
+      } else if (Platform.isMacOS) {
+        directory = await getDownloadsDirectory();
       } else {
         directory = Directory('/storage/emulated/0/Download');
         // Put file in global download folder, if for an unknown reason it didn't exist, we fallback
@@ -88,21 +88,39 @@ class _FirstPageState extends State<FirstPage> {
     Video v = listaVideos[index];
     final yt = YoutubeExplode();
     final streamInfo = await yt.videos.streamsClient.getManifest(v.id);
+    final audioInfo = streamInfo.audioOnly;
+    final audio = audioInfo.first;
+    final audioStream = yt.videos.streamsClient.get(audio);
     final tempDir = await getTemporaryDirectory();
 
     File file;
-    String title = v.title;
+    String fileName = '${v.title}.'
+        .replaceAll(r'\', '')
+        .replaceAll('/', '')
+        .replaceAll('*', '')
+        .replaceAll('?', '')
+        .replaceAll('"', '')
+        .replaceAll('<', '')
+        .replaceAll('>', '')
+        .replaceAll('|', '');
     if (Platform.isWindows) {
-      file = File(tempDir.path + '/' + title + '.mp3');
-    } else {
+      file = File('$tempDir/$fileName.mp3');
+    } else if (Platform.isMacOS) {
       String? downloadsDir = await getDownloadPath();
-      file = File(downloadsDir! + '/' + title + '.mp3');
+      file = File('$downloadsDir/$fileName.mp3');
+    } else  {
+      String? downloadsDir = await getDownloadPath();
+      file = File('$downloadsDir/$fileName.mp3');
+    }
+
+    if (file.existsSync()) {
+      file.deleteSync();
     }
 
     if (streamInfo != null) {
       var info = streamInfo.audioOnly.withHighestBitrate();
       var stream = yt.videos.streamsClient.get(info);
-      var fileStream = file.openWrite();
+      var fileStream = file.openWrite(mode: FileMode.writeOnlyAppend);
 
       try {
         listaVideosEnDescarga.add(v);
@@ -112,6 +130,16 @@ class _FirstPageState extends State<FirstPage> {
           listaVideosEnDescarga = listaVideosEnDescarga;
         });
 
+        final len = audio.size.totalBytes;
+        var count = 0;
+        await for (final data in audioStream) {
+          //Calcular Progreso - Mirar en GitHub
+          count += data.length;
+          final progress = ((count / len) * 100).ceil();
+          print(progress.toStringAsFixed(2));
+          fileStream.add(data);
+        }
+        
         await stream.pipe(fileStream);
         await fileStream.flush();
         await fileStream.close();
@@ -122,12 +150,8 @@ class _FirstPageState extends State<FirstPage> {
         setState(() {
           listaDescargados = listaDescargados;
         });
-        //listaVideosEnDescarga.remove(v);
-        print('${v.title} terminó de descargarse✅');
 
-        /*setState(() {
-          listaVideosEnDescarga = listaVideosEnDescarga;
-        });*/
+        print('${v.title} terminó de descargarse✅');
       } catch (e) {
         print('Error 😒: ' + e.toString());
       }
@@ -309,9 +333,7 @@ class _FirstPageState extends State<FirstPage> {
                             ),
                           ),
                         ),
-
                         Spacer(),
-                        
                         Align(
                           alignment: Alignment.centerRight,
                           child: Padding(
