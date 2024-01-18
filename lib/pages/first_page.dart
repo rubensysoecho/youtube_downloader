@@ -167,8 +167,8 @@ class _FirstPageState extends State<FirstPage> {
     Video v = listaVideos[index];
     final yt = YoutubeExplode();
     final streamInfo = await yt.videos.streamsClient.getManifest(v.id);
-    final videoInfo = streamInfo.video;
-    final video = videoInfo.first;
+    final videoInfo = streamInfo.muxed;
+    final video = videoInfo.bestQuality;
     final videoStream = yt.videos.streamsClient.get(video);
     final tempDir = await getTemporaryDirectory();
 
@@ -225,6 +225,11 @@ class _FirstPageState extends State<FirstPage> {
         await fileStream.close();
 
         listaVideosEnDescarga.remove(v);
+
+        setState(() {
+          listaVideosEnDescarga = listaVideosEnDescarga;
+        });
+
         listaDescargados.add(v);
 
         setState(() {
@@ -292,6 +297,7 @@ class _FirstPageState extends State<FirstPage> {
         listaVideosEnDescarga: listaVideosEnDescarga,
         listaDescargados: listaDescargados,
       ),
+      
       body: Padding(
         padding: const EdgeInsets.all(24),
         child: Column(
@@ -360,6 +366,7 @@ class _FirstPageState extends State<FirstPage> {
                           image: NetworkImage(v.thumbnails.highResUrl),
                         ),
                         Flexible(
+                          flex: 4,
                           child: Padding(
                             padding: const EdgeInsets.all(10),
                             child: Column(

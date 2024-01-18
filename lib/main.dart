@@ -2,6 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:youtube_downloader/pages/first_page.dart';
+import 'package:desktop_window/desktop_window.dart';
 
 void main() {
   runApp(const MyApp());
@@ -12,6 +13,7 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    DesktopWindow.setMinWindowSize(Size(1000, 500));
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'Youtube Downloader',

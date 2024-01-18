@@ -1,13 +1,14 @@
 // ignore_for_file: prefer_const_constructors, prefer_const_literals_to_create_immutables
 
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:youtube_explode_dart/youtube_explode_dart.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:open_file/open_file.dart';
 
 class DownloadsDrawer extends StatefulWidget {
-  DownloadsDrawer(
-      {required this.listaVideosEnDescarga, required this.listaDescargados});
+  DownloadsDrawer({required this.listaVideosEnDescarga, required this.listaDescargados});
 
   List<Video> listaVideosEnDescarga;
   List<Video> listaDescargados;
@@ -17,9 +18,20 @@ class DownloadsDrawer extends StatefulWidget {
 }
 
 class _DownloadsDrawerState extends State<DownloadsDrawer> {
+
   Future<void> abrirDireccion() async {
-    final String path = (await getTemporaryDirectory()).path;
-    OpenFile.open('$path\\');
+    final path;
+
+    if (Platform.isWindows) {
+      path = (await getTemporaryDirectory()).path;
+      OpenFile.open('$path\\');
+    } else if (Platform.isMacOS)  {
+      path = await getDownloadsDirectory();
+      OpenFile.open('$path\\');
+    } else  {
+      path = (await getTemporaryDirectory()).path;
+      OpenFile.open('$path\\');
+    }
   }
 
   void borrarDescargado(int index) {
