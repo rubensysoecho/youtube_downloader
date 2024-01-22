@@ -19,19 +19,19 @@ class FirstPage extends StatefulWidget {
 class _FirstPageState extends State<FirstPage> {
   final myController = TextEditingController();
 
-  List listaVideos = [];
-  List<Video> listaVideosEnDescarga = [];
-  List<Video> listaDescargados = [];
+  List videosList = [];
+  List<Video> videosListOnDownload = [];
+  List<Video> downloadedList = [];
   bool btnVisible = false;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
   }
-  void ejecutarBuscarVideos(url) async {
-    listaVideos = await buscarVideos(url);
+  void executeSearchVideos(url) async {
+    videosList = await searchVideos(url);
   }
-  void abrirDrawer(BuildContext context) {
+  void openDrawer(BuildContext context) {
     Scaffold.of(context).openDrawer();
   }
   @override
@@ -41,7 +41,7 @@ class _FirstPageState extends State<FirstPage> {
   }
 
   // Youtube related functions
-  Future<List> buscarVideos(url) async { 
+  Future<List> searchVideos(url) async { 
     btnVisible = btnVisible;
     showDialog(
       context: context,
@@ -50,28 +50,28 @@ class _FirstPageState extends State<FirstPage> {
       },
     );
 
-    listaVideos.clear();
+    videosList.clear();
 
     var yt = YoutubeExplode();
     var playlist = await yt.playlists.get(url);
 
     await for (var video in yt.playlists.getVideos(playlist.id)) {
-      listaVideos.add(video);
+      videosList.add(video);
     }
 
-    if (listaVideos.isNotEmpty) {
+    if (videosList.isNotEmpty) {
       setState(() {
-        listaVideos = listaVideos;
+        videosList = videosList;
         btnVisible = true;
       });
-      print('Nombres de videos añadidos a lista✅');
+      print('Videos names added to list ✅');
     } else {
-      print('Lista vacia ❌');
+      print('Empty list ❌');
     }
 
     Navigator.of(context).pop();
     yt.close();
-    return listaVideos;
+    return videosList;
   }
 
   Future<String?> getDownloadPath() async {
@@ -81,7 +81,7 @@ class _FirstPageState extends State<FirstPage> {
         directory = await getDownloadsDirectory();
       } else if (Platform.isMacOS) {
         directory = await getDownloadsDirectory();
-      } else {
+      } else if (Platform.isAndroid) {
         directory = Directory('/storage/emulated/0/Download');
         // Put file in global download folder, if for an unknown reason it didn't exist, we fallback
         // ignore: avoid_slow_async_io
@@ -95,8 +95,8 @@ class _FirstPageState extends State<FirstPage> {
     return directory?.path;
   }
 
-  Future<void> descargarVideo(int index, Format format) async {
-    Video v = listaVideos[index];
+  Future<void> downloadVideo(int index, Format format) async {
+    Video v = videosList[index];
     final yt = YoutubeExplode();
     final streamInfo = await yt.videos.streamsClient.getManifest(v.id);
     final tempDir = await getTemporaryDirectory();
@@ -151,11 +151,11 @@ class _FirstPageState extends State<FirstPage> {
       var fileStream = file.openWrite(mode: FileMode.writeOnlyAppend);
 
       try {
-        listaVideosEnDescarga.add(v);
+        videosListOnDownload.add(v);
         print('${v.title} descargandose...');
 
         setState(() {
-          listaVideosEnDescarga = listaVideosEnDescarga;
+          videosListOnDownload = videosListOnDownload;
         });
 
         final countController = StreamController<int>();
@@ -173,11 +173,11 @@ class _FirstPageState extends State<FirstPage> {
         await fileStream.flush();
         await fileStream.close();
 
-        listaVideosEnDescarga.remove(v);
-        listaDescargados.add(v);
+        videosListOnDownload.remove(v);
+        downloadedList.add(v);
 
         setState(() {
-          listaDescargados = listaDescargados;
+          downloadedList = downloadedList;
         });
 
         countController.close();
@@ -190,11 +190,11 @@ class _FirstPageState extends State<FirstPage> {
     yt.close();
   }
 
-  Future<void> descargarPlaylist() async {
-    int numVideos = listaVideos.length;
+  Future<void> downloadPlaylist() async {
+    int numVideos = videosList.length;
     for (int i = 0; i < numVideos; i++) {
       print(i);
-      descargarVideo(i, Format.mp3);
+      downloadVideo(i, Format.mp3);
     }
   }
 
@@ -209,7 +209,7 @@ class _FirstPageState extends State<FirstPage> {
             ElevatedButton(
               onPressed: () {
                 Navigator.of(context).pop(true);
-                descargarPlaylist();
+                downloadPlaylist();
               },
               child: Text('Si'),
             ),
@@ -228,8 +228,8 @@ class _FirstPageState extends State<FirstPage> {
     return Scaffold(
       appBar: AppBar(title: Text('Youtube Downloader')),
       drawer: DownloadsDrawer(
-        listaVideosEnDescarga: listaVideosEnDescarga,
-        listaDescargados: listaDescargados,
+        videosListOnDownload: videosListOnDownload,
+        downloadedList: downloadedList,
       ),
       
       body: Padding(
@@ -244,7 +244,7 @@ class _FirstPageState extends State<FirstPage> {
             TextField(
               controller: myController,
               onSubmitted: (value) {
-                ejecutarBuscarVideos(value);
+                executeSearchVideos(value);
               },
               decoration: InputDecoration(
                   border: OutlineInputBorder(
@@ -264,7 +264,7 @@ class _FirstPageState extends State<FirstPage> {
                       _mostrarDialogo();
                     },
                     child: Text(
-                      'Download All (${listaVideos.length} videos)',
+                      'Download All (${videosList.length} videos)',
                       style: TextStyle(fontSize: 20),
                     ),
                   ),
@@ -282,9 +282,9 @@ class _FirstPageState extends State<FirstPage> {
             ),
             Expanded(
               child: ListView.builder(
-                itemCount: listaVideos.length,
+                itemCount: videosList.length,
                 itemBuilder: (context, index) {
-                  Video v = listaVideos[index];
+                  Video v = videosList[index];
 
                   return Card(
                     shape: RoundedRectangleBorder(
@@ -331,8 +331,8 @@ class _FirstPageState extends State<FirstPage> {
                               children: [
                                 ElevatedButton(
                                   onPressed: () {
-                                    descargarVideo(index, Format.mp3);
-                                    abrirDrawer(context);
+                                    downloadVideo(index, Format.mp3);
+                                    openDrawer(context);
                                   },
                                   child: Padding(
                                     padding: const EdgeInsets.all(15),
@@ -344,8 +344,8 @@ class _FirstPageState extends State<FirstPage> {
                                 ),
                                 ElevatedButton(
                                   onPressed: () {
-                                    descargarVideo(index, Format.mp4);
-                                    abrirDrawer(context);
+                                    downloadVideo(index, Format.mp4);
+                                    openDrawer(context);
                                   },
                                   child: Padding(
                                     padding: const EdgeInsets.all(15),

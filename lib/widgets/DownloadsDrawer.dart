@@ -8,10 +8,10 @@ import 'package:path_provider/path_provider.dart';
 import 'package:open_file/open_file.dart';
 
 class DownloadsDrawer extends StatefulWidget {
-  DownloadsDrawer({required this.listaVideosEnDescarga, required this.listaDescargados});
+  DownloadsDrawer({required this.videosListOnDownload, required this.downloadedList});
 
-  List<Video> listaVideosEnDescarga;
-  List<Video> listaDescargados;
+  List<Video> videosListOnDownload;
+  List<Video> downloadedList;
 
   @override
   State<DownloadsDrawer> createState() => _DownloadsDrawerState();
@@ -19,7 +19,7 @@ class DownloadsDrawer extends StatefulWidget {
 
 class _DownloadsDrawerState extends State<DownloadsDrawer> {
 
-  Future<void> abrirDireccion() async {
+  Future<void> openDirection() async {
     final path;
 
     if (Platform.isWindows) {
@@ -34,10 +34,10 @@ class _DownloadsDrawerState extends State<DownloadsDrawer> {
     }
   }
 
-  void borrarDescargado(int index) {
-    widget.listaDescargados.remove(widget.listaDescargados[index]);
+  void deleteDownloaded(int index) {
+    widget.downloadedList.remove(widget.downloadedList[index]);
     setState(() {
-      widget.listaDescargados = widget.listaDescargados;
+      widget.downloadedList = widget.downloadedList;
     });
   }
 
@@ -59,9 +59,9 @@ class _DownloadsDrawerState extends State<DownloadsDrawer> {
             ),
             ListView.builder(
               shrinkWrap: true,
-              itemCount: widget.listaVideosEnDescarga.length,
+              itemCount: widget.videosListOnDownload.length,
               itemBuilder: (context, index) {
-                Video v = widget.listaVideosEnDescarga[index];
+                Video v = widget.videosListOnDownload[index];
                 return Padding(
                     padding: const EdgeInsets.only(top: 5, bottom: 5),
                     child: ListTile(
@@ -70,7 +70,7 @@ class _DownloadsDrawerState extends State<DownloadsDrawer> {
                         subtitle: Text(v.author),
                         trailing: ElevatedButton(
                           onPressed: () {
-                            abrirDireccion();
+                            openDirection();
                           },
                           child: Icon(
                             Icons.folder,
@@ -81,9 +81,9 @@ class _DownloadsDrawerState extends State<DownloadsDrawer> {
             ),
             ListView.builder(
               shrinkWrap: true,
-              itemCount: widget.listaDescargados.length,
+              itemCount: widget.downloadedList.length,
               itemBuilder: (context, index) {
-                Video v = widget.listaDescargados[index];
+                Video v = widget.downloadedList[index];
 
                 return Padding(
                   padding: const EdgeInsets.only(top: 5, bottom: 5),
@@ -91,7 +91,7 @@ class _DownloadsDrawerState extends State<DownloadsDrawer> {
                       tileColor: Colors.green,
                       leading: ElevatedButton(
                         onPressed: () {
-                          borrarDescargado(index);
+                          deleteDownloaded(index);
                         },
                         child: Icon(Icons.close),
                       ),
@@ -99,7 +99,7 @@ class _DownloadsDrawerState extends State<DownloadsDrawer> {
                       subtitle: Text(v.author),
                       trailing: ElevatedButton(
                         onPressed: () {
-                          abrirDireccion();
+                          openDirection();
                         },
                         child: Icon(
                           Icons.folder,
