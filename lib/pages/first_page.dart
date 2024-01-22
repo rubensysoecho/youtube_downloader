@@ -4,6 +4,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:youtube_downloader/utils/formats.dart';
 import 'package:youtube_explode_dart/youtube_explode_dart.dart';
 import 'package:path_provider/path_provider.dart';
 import '../widgets/DownloadsDrawer.dart';
@@ -23,7 +24,24 @@ class _FirstPageState extends State<FirstPage> {
   List<Video> listaDescargados = [];
   bool btnVisible = false;
 
-  Future<List> buscarVideos(url) async {
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+  }
+  void ejecutarBuscarVideos(url) async {
+    listaVideos = await buscarVideos(url);
+  }
+  void abrirDrawer(BuildContext context) {
+    Scaffold.of(context).openDrawer();
+  }
+  @override
+  void disponse() {
+    myController.dispose();
+    super.dispose();
+  }
+
+  // Youtube related functions
+  Future<List> buscarVideos(url) async { 
     btnVisible = btnVisible;
     showDialog(
       context: context,
@@ -33,6 +51,7 @@ class _FirstPageState extends State<FirstPage> {
     );
 
     listaVideos.clear();
+
     var yt = YoutubeExplode();
     var playlist = await yt.playlists.get(url);
 
@@ -53,15 +72,6 @@ class _FirstPageState extends State<FirstPage> {
     Navigator.of(context).pop();
     yt.close();
     return listaVideos;
-  }
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-  }
-
-  void ejecutarBuscarVideos(url) async {
-    listaVideos = await buscarVideos(url);
   }
 
   Future<String?> getDownloadPath() async {
@@ -85,14 +95,28 @@ class _FirstPageState extends State<FirstPage> {
     return directory?.path;
   }
 
-  Future<void> descargarVideoMP3(index) async {
+  Future<void> descargarVideo(int index, Format format) async {
     Video v = listaVideos[index];
     final yt = YoutubeExplode();
     final streamInfo = await yt.videos.streamsClient.getManifest(v.id);
-    final audioInfo = streamInfo.audioOnly;
-    final audio = audioInfo.first;
-    final audioStream = yt.videos.streamsClient.get(audio);
     final tempDir = await getTemporaryDirectory();
+    var mediaInfo;
+    var media;
+    Stream<List<int>> mediaStream;
+
+    if (format == Format.mp3)  {
+      mediaInfo = streamInfo.audioOnly;
+      media = mediaInfo.first;
+      mediaStream = yt.videos.streamsClient.get(media);
+    } else if (format == Format.mp4) {
+      mediaInfo = streamInfo.muxed;
+      media = mediaInfo.bestQuality;
+      mediaStream = yt.videos.streamsClient.get(media);
+    } else  {
+      mediaInfo = streamInfo.muxed;
+      media = mediaInfo.bestQuality;
+      mediaStream = yt.videos.streamsClient.get(media);
+    }
 
     File file;
     String fileName = '${v.title}.'
@@ -104,14 +128,17 @@ class _FirstPageState extends State<FirstPage> {
         .replaceAll('<', '')
         .replaceAll('>', '')
         .replaceAll('|', '');
+    
+    String f = format.toString();
+
     if (Platform.isWindows) {
-      file = File('$tempDir/$fileName.mp3');
-    } else if (Platform.isMacOS) {
+      file = File('$tempDir/$fileName.$f');
+    } else if (Platform.isMacOS)  {
       String? downloadsDir = await getDownloadPath();
-      file = File('$downloadsDir/$fileName.mp3');
+      file = File('$downloadsDir/$fileName.$f');
     } else  {
       String? downloadsDir = await getDownloadPath();
-      file = File('$downloadsDir/$fileName.mp3');
+      file = File('$downloadsDir/$fileName.$f');
     }
 
     if (file.existsSync()) {
@@ -132,9 +159,9 @@ class _FirstPageState extends State<FirstPage> {
         });
 
         final countController = StreamController<int>();
-        final len = audio.size.totalBytes;
+        final len = media.size.totalBytes;
         var count = 0;
-        await for (final data in audioStream) {
+        await for (final data in mediaStream) {
           //Calcular Progreso - Mirar en GitHub
           count += data.length;
           final progress = ((count / len) * 100).ceil();
@@ -163,99 +190,12 @@ class _FirstPageState extends State<FirstPage> {
     yt.close();
   }
 
-  Future<void> descargarVideoMP4(index) async {
-    Video v = listaVideos[index];
-    final yt = YoutubeExplode();
-    final streamInfo = await yt.videos.streamsClient.getManifest(v.id);
-    final videoInfo = streamInfo.muxed;
-    final video = videoInfo.bestQuality;
-    final videoStream = yt.videos.streamsClient.get(video);
-    final tempDir = await getTemporaryDirectory();
-
-    File file;
-    String fileName = '${v.title}.'
-        .replaceAll(r'\', '')
-        .replaceAll('/', '')
-        .replaceAll('*', '')
-        .replaceAll('?', '')
-        .replaceAll('"', '')
-        .replaceAll('<', '')
-        .replaceAll('>', '')
-        .replaceAll('|', '');
-    if (Platform.isWindows) {
-      file = File('$tempDir/$fileName.mp4');
-    } else if (Platform.isMacOS) {
-      String? downloadsDir = await getDownloadPath();
-      file = File('$downloadsDir/$fileName.mp4');
-    } else  {
-      String? downloadsDir = await getDownloadPath();
-      file = File('$downloadsDir/$fileName.mp4');
-    }
-
-    if (file.existsSync()) {
-      file.deleteSync();
-    }
-
-    if (streamInfo != null) {
-      var info = streamInfo.audioOnly.withHighestBitrate();
-      var stream = yt.videos.streamsClient.get(info);
-      var fileStream = file.openWrite(mode: FileMode.writeOnlyAppend);
-
-      try {
-        listaVideosEnDescarga.add(v);
-        print('${v.title} descargandose...');
-
-        setState(() {
-          listaVideosEnDescarga = listaVideosEnDescarga;
-        });
-
-        final countController = StreamController<int>();
-        final len = video.size.totalBytes;
-        var count = 0;
-        await for (final data in videoStream) {
-          //Calcular Progreso - Mirar en GitHub
-          count += data.length;
-          final progress = ((count / len) * 100).ceil();
-          print(progress.toStringAsFixed(2));
-          fileStream.add(data);
-        }
-        
-        await stream.pipe(fileStream);
-        await fileStream.flush();
-        await fileStream.close();
-
-        listaVideosEnDescarga.remove(v);
-
-        setState(() {
-          listaVideosEnDescarga = listaVideosEnDescarga;
-        });
-
-        listaDescargados.add(v);
-
-        setState(() {
-          listaDescargados = listaDescargados;
-        });
-
-        countController.close();
-        print('${v.title} terminó de descargarse✅');
-      } catch (e) {
-        print('Error 😒: ' + e.toString());
-      }
-    }
-
-    yt.close();
-  }
-
-  Future<void> descargarPlaylistMP3() async {
+  Future<void> descargarPlaylist() async {
     int numVideos = listaVideos.length;
     for (int i = 0; i < numVideos; i++) {
       print(i);
-      descargarVideoMP3(i);
+      descargarVideo(i, Format.mp3);
     }
-  }
-
-  void abrirDrawer(BuildContext context) {
-    Scaffold.of(context).openDrawer();
   }
 
   void _mostrarDialogo() {
@@ -269,7 +209,7 @@ class _FirstPageState extends State<FirstPage> {
             ElevatedButton(
               onPressed: () {
                 Navigator.of(context).pop(true);
-                descargarPlaylistMP3();
+                descargarPlaylist();
               },
               child: Text('Si'),
             ),
@@ -281,12 +221,6 @@ class _FirstPageState extends State<FirstPage> {
         );
       },
     );
-  }
-
-  @override
-  void disponse() {
-    myController.dispose();
-    super.dispose();
   }
 
   @override
@@ -397,7 +331,7 @@ class _FirstPageState extends State<FirstPage> {
                               children: [
                                 ElevatedButton(
                                   onPressed: () {
-                                    descargarVideoMP3(index);
+                                    descargarVideo(index, Format.mp3);
                                     abrirDrawer(context);
                                   },
                                   child: Padding(
@@ -410,7 +344,7 @@ class _FirstPageState extends State<FirstPage> {
                                 ),
                                 ElevatedButton(
                                   onPressed: () {
-                                    descargarVideoMP4(index);
+                                    descargarVideo(index, Format.mp4);
                                     abrirDrawer(context);
                                   },
                                   child: Padding(

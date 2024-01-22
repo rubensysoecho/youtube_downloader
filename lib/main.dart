@@ -13,7 +13,7 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    DesktopWindow.setMinWindowSize(Size(1000, 500));
+    DesktopWindow.setMinWindowSize(Size(1200, 600));
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'Youtube Downloader',
